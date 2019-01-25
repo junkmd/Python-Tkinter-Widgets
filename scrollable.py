@@ -3,6 +3,22 @@ import tkinter as tk
 from tkinter import ttk
 
 
+TK_GEOMETRY_METHODS = tuple(set([
+    m for m in
+    list(tk.Pack.__dict__.keys()) +
+    list(tk.Grid.__dict__.keys()) +
+    list(tk.Place.__dict__.keys())
+    if m[0] != "_" and m != "config" and m != "configure"
+]))
+
+TK_XYVIEW_METHODS = tuple(set([
+    m for m in
+    list(tk.XView.__dict__.keys()) +
+    list(tk.YView.__dict__.keys())
+    if m[0] != "_" and m != "config" and m != "configure"
+]))
+
+
 class ScrollableOuter(tk.Frame):
     """Custom frame widget.
     This will be parent of widget inherited XView and/or YView"""
