@@ -1,15 +1,8 @@
 """Tkinter modified Frame widgets inherited XView and/or YView."""
 import tkinter as tk
 from tkinter import ttk
+from composite import TK_GEOMETRY_METHODS, InteriorAndExterior
 
-
-TK_GEOMETRY_METHODS = tuple(set([
-    m for m in
-    list(tk.Pack.__dict__.keys()) +
-    list(tk.Grid.__dict__.keys()) +
-    list(tk.Place.__dict__.keys())
-    if m[0] != '_' and m != 'config' and m != 'configure'
-]))
 
 TK_XYVIEW_METHODS = tuple(set([
     m for m in
@@ -48,57 +41,50 @@ class ScrollableOuter(tk.Frame):
     interior = property(fget=lambda self: self.__interior)
 
 
-class XYFrame(tk.Frame, tk.XView, tk.YView):
+class XYFrame(tk.Frame, tk.XView, tk.YView, InteriorAndExterior):
     """Pure tkinter composite widget made with Canvas(outer) and Frame(core).
     Scrollable Frame widget.
     """
     def __init__(self, master=None, **kw):
-        self.__outer = tk.Canvas(master, highlightthickness=0, takefocus=False)
-        tk.Frame.__init__(self, self.__outer)
+        exterior = tk.Canvas(master, highlightthickness=0, takefocus=False)
+        tk.Frame.__init__(self, exterior)
 
-        self.__id = self.__outer.create_window(0, 0, window=self, anchor=tk.NW)
+        self.__id = exterior.create_window(0, 0, window=self, anchor=tk.NW)
         self.bind('<Configure>', self.__on_config, '+')
 
-        for m in TK_GEOMETRY_METHODS + TK_XYVIEW_METHODS + (
-                'winfo_parent',
-                ):
-            setattr(self, m, getattr(self.__outer, m))
+        InteriorAndExterior.__init__(self, exterior)
 
-        self.__outer.bind('<MouseWheel>', self.on_scroll, '+')
+        for m in TK_XYVIEW_METHODS:
+            setattr(self, m, getattr(exterior, m))
+
+        exterior.bind('<MouseWheel>', self.on_scroll, '+')
         self.bind('<MouseWheel>', self.on_scroll, '+')
-        self.bbox = self.__outer.grid_bbox
+        self.bbox = exterior.grid_bbox
 
-        canvas_keys = self.__outer.keys()
-        frame_keys = tk.Frame.keys(self)
-        common_factors = list(set(canvas_keys) & set(frame_keys))
-        canvas_specs = list(set(canvas_keys) - set(frame_keys))
-        frame_specs = list(set(frame_keys) - set(canvas_keys))
-        self.__common_k = [
-            'highlightbackground', 'bg', 'highlightcolor', 'background']
-        common_but_frame = ['takefocus']
-        common_but_canvas = list(set(common_factors) - set(common_but_frame))
-        self.__frame_k = frame_specs + common_but_frame
-        self.__canvas_k = canvas_specs + common_but_canvas
+        exter_move = [
+            'relief', 'cursor', 'bd', 'highlightthickness', 'borderwidth',
+            'height', 'width']
+        inter_move = ['takefocus']
+
+        for k in exter_move:
+            self._common_kw.pop(k)
+            self._exterior_kw[k] = k
+
+        for k in inter_move:
+            self._common_kw.pop(k)
+            self._interior_kw[k] = k
 
         self.config = self.configure
         self.config(**kw)
 
     def configure(self, **kw):
-        frame_kw, canvas_kw = {}, {}
-        for k, v in kw.items():
-            if k in self.__common_k:
-                frame_kw[k] = v
-                canvas_kw[k] = v
-            elif k in self.__frame_k:
-                frame_kw[k] = v
-            elif k in self.__canvas_k:
-                canvas_kw[k] = v
-        self.__outer.config(**canvas_kw)
+        frame_kw, canvas_kw = self._dispatch_each_options(**kw)
+        self._exterior.config(**canvas_kw)
         tk.Frame.config(self, **frame_kw)
 
     def on_scroll(self, event):
         """On scroll event."""
-        u, l = self.__outer.yview()
+        u, l = self._exterior.yview()
         if u == 0 and l == 1:
             return None
         direction = 0
@@ -106,26 +92,29 @@ class XYFrame(tk.Frame, tk.XView, tk.YView):
             direction = 1
         if event.num == 4 or event.delta == 120:
             direction = -1
-        self.__outer.yview_scroll(direction, tk.UNITS)
+        self._exterior.yview_scroll(direction, tk.UNITS)
 
     def on_focus_moveto_y(self, event):
         widget_y = event.widget.winfo_y()
         widget_h = event.widget.winfo_reqheight()
         y1, y2, reqh = widget_y, widget_y + widget_h, self.winfo_reqheight()
-        yv_u, yv_l = self.__outer.yview()
+        yv_u, yv_l = self._exterior.yview()
         if not (yv_u <= y1/reqh <= yv_l) or not (yv_u <= y2/reqh <= yv_l):
-            self.__outer.yview_moveto(widget_y/reqh)
+            self._exterior.yview_moveto(widget_y/reqh)
 
     def on_focus_moveto_x(self, event):
         widget_x = event.widget.winfo_x()
         widget_w = event.widget.winfo_reqwidth()
         x1, x2, reqw = widget_x, widget_x + widget_w, self.winfo_reqwidth()
-        xv_u, xv_l = self.__outer.xview()
+        xv_u, xv_l = self._exterior.xview()
         if not (xv_u <= x1/reqw <= xv_l) or not (xv_u <= x2/reqw <= xv_l):
-            self.__outer.xview_moveto(widget_x/reqw)
+            self._exterior.xview_moveto(widget_x/reqw)
 
     def __on_config(self, *dummy):
-        if tk.Frame.winfo_reqheight(self) != self.__outer.winfo_height() \
-                or tk.Frame.winfo_reqwidth(self) != self.__outer.winfo_width():
-            self.__outer.update_idletasks()
-            self.__outer.config(scrollregion=self.__outer.bbox(self.__id))
+        frame_reqh = tk.Frame.winfo_reqheight(self)
+        exterior_h = self._exterior.winfo_height()
+        frame_reqw = tk.Frame.winfo_reqwidth(self)
+        exterior_w = self._exterior.winfo_width()
+        if frame_reqh != exterior_h or frame_reqw != exterior_w:
+            self._exterior.update_idletasks()
+            self._exterior.config(scrollregion=self._exterior.bbox(self.__id))
