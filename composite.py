@@ -12,7 +12,7 @@ TK_GEOMETRY_METHODS = tuple(set([
 ]))
 
 
-class InteriorAndExterior(tk.Misc):
+class InteriorAndExterior:
     """Internal class."""
     def __init__(self, exterior):
         self._exterior = exterior
@@ -41,8 +41,10 @@ class InteriorAndExterior(tk.Misc):
             if k in self._common_kw.keys():
                 inter_opts[self._common_kw[k]] = kw[k]
                 exter_opts[self._common_kw[k]] = kw[k]
-            if k in self._interior_kw.keys():
+            elif k in self._interior_kw.keys():
                 inter_opts[self._interior_kw[k]] = kw[k]
-            if k in self._exterior_kw.keys():
+            elif k in self._exterior_kw.keys():
                 exter_opts[self._exterior_kw[k]] = kw[k]
+            else:
+                raise tk.TclError('unknown option \"%s\"' % ('-' + k, ))
         return (inter_opts, exter_opts)
