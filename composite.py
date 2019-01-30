@@ -21,13 +21,12 @@ class InteriorAndExterior:
     def __init__(self, exterior):
         self._exterior = exterior
 
-        if self not in self._exterior.winfo_children():
+        if self not in exterior.winfo_children():
             raise CompositeWidgetError(
                 "Interior must be childrens of Exterior.")
 
         for m in TK_GEOMETRY_METHODS:
             setattr(self, m, getattr(exterior, m))
-        self.winfo_parent = exterior.winfo_parent
 
         self._base = self.__class__.mro()[1]  # Base class of composite widget.
         if not issubclass(self._base, tk.Widget):
@@ -48,9 +47,13 @@ class InteriorAndExterior:
                 kw[k] = k
         self._common_kw = c_kw
         self._interior_kw, self._exterior_kw = i_kw, e_kw
-        self.config = self.configure
+        self.winfo_parent = exterior.winfo_parent
+        self.config = self.configure = self.__configure
+        self.keys = self.__keys
+        self.cget = self.__cget
+        self.destroy = self.__destroy
 
-    def _dispatch_each_options(self, **kw):
+    def __dispatch_each_options(self, **kw):
         """Internal function.
         Returns interior, exterior option."""
         inter_opts, exter_opts = {}, {}
@@ -66,7 +69,7 @@ class InteriorAndExterior:
                 raise tk.TclError('unknown option \"%s\"' % ('-' + k, ))
         return (inter_opts, exter_opts)
 
-    def destroy(self):
+    def __destroy(self):
         """Destroy this and all descendants widgets."""
         # Destroy self._exterior and its children widgets including interior.
         # For avoiding RecursionError,
@@ -83,7 +86,8 @@ class InteriorAndExterior:
         self._base.destroy(self)
         self._exterior.destroy()
 
-    def keys(self):
+    def __keys(self):
+        """Return a list of all resource names of this widget."""
         inter = self._interior_kw.keys()
         exter = self._exterior_kw.keys()
         common = self._common_kw.keys()
@@ -91,7 +95,17 @@ class InteriorAndExterior:
         keys.sort()
         return keys
 
-    def configure(self, **kw):
-        inter_kw, exter_kw = self._dispatch_each_options(**kw)
+    def __configure(self, **kw):
+        """Configure resources of a widget.
+
+        The values for resources are specified as keyword
+        arguments. To get an overview about
+        the allowed keyword arguments call the method keys.
+        """
+        inter_kw, exter_kw = self.__dispatch_each_options(**kw)
         self._exterior.config(**exter_kw)
         self._base.config(self, **inter_kw)
+
+    def __cget(self, keys):
+        """Return the resource value for a KEY given as string."""
+        pass  # now implementing

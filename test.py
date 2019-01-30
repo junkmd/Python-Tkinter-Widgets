@@ -16,9 +16,10 @@ for i in range(0, 30):
 
 
 def change_widget():
-    xyframe.config(bg="blue", bd=2)
+    xyframe.configure(bg="blue", bd=2)
+    print(xyframe.keys())
     # xyframe.destroy()
-    print(xyframe._exterior.winfo_children())
+    # print(xyframe._exterior.winfo_children())
 
 
 btn = tk.Button(root, text='kill', command=change_widget)

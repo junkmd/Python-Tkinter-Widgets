@@ -112,12 +112,3 @@ class XYFrame(tk.Frame, tk.XView, tk.YView, InteriorAndExterior):
         if frame_reqh != exterior_h or frame_reqw != exterior_w:
             self._exterior.update_idletasks()
             self._exterior.config(scrollregion=self._exterior.bbox(self.__id))
-
-    def configure(self, **kw):
-        return InteriorAndExterior.configure(self, **kw)
-
-    def destroy(self):
-        return InteriorAndExterior.destroy(self)
-
-    def keys(self):
-        return InteriorAndExterior.keys(self)
