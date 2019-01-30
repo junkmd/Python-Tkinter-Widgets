@@ -12,7 +12,7 @@ TK_GEOMETRY_METHODS = tuple(set([
 ]))
 
 
-class CompositeWidgetError(Exception):
+class CompositeWidgetError(tk.TclError):
     pass
 
 
@@ -21,16 +21,20 @@ class InteriorAndExterior:
     def __init__(self, exterior):
         self._exterior = exterior
 
-        if self in self._exterior.winfo_children():
-            pass
-        else:
+        if self not in self._exterior.winfo_children():
             raise CompositeWidgetError(
                 "Interior must be childrens of Exterior.")
 
         for m in TK_GEOMETRY_METHODS:
             setattr(self, m, getattr(exterior, m))
         self.winfo_parent = exterior.winfo_parent
-        self._base = self.__class__.mro()[1]
+
+        self._base = self.__class__.mro()[1]  # Base class of composite widget.
+        if not issubclass(self._base, tk.Widget):
+            raise CompositeWidgetError(
+                "Base class of composite widget "
+                "must be subclass of tk.BaseWidget.")
+
         inter_keys = self._base.keys(self)
         exter_keys = exterior.keys()
         common_keys = list(set(inter_keys) & set(exter_keys))
@@ -76,16 +80,16 @@ class InteriorAndExterior:
                 del_dict[k] = v
         for k, v in del_dict.items():
             del self._exterior.children[k]
-            v.destroy()
+        self._base.destroy(self)
         self._exterior.destroy()
 
     def keys(self):
         inter = self._interior_kw.keys()
         exter = self._exterior_kw.keys()
         common = self._common_kw.keys()
-        keyset = list(set(list(inter) + list(exter) + list(common)))
-        keyset.sort()
-        return keyset
+        keys = list(set(list(inter) + list(exter) + list(common)))
+        keys.sort()
+        return keys
 
     def configure(self, **kw):
         inter_kw, exter_kw = self._dispatch_each_options(**kw)

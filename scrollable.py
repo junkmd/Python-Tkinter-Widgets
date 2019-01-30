@@ -52,14 +52,14 @@ class XYFrame(tk.Frame, tk.XView, tk.YView, InteriorAndExterior):
         self.__id = exterior.create_window(0, 0, window=self, anchor=tk.NW)
         self.bind('<Configure>', self.__on_config, '+')
 
-        InteriorAndExterior.__init__(self, exterior)
-
         for m in TK_XYVIEW_METHODS:
             setattr(self, m, getattr(exterior, m))
 
         exterior.bind('<MouseWheel>', self.on_scroll, '+')
         self.bind('<MouseWheel>', self.on_scroll, '+')
         self.bbox = exterior.grid_bbox
+
+        InteriorAndExterior.__init__(self, exterior)
 
         exter_move = [
             'relief', 'cursor', 'bd', 'highlightthickness', 'borderwidth',
@@ -74,7 +74,6 @@ class XYFrame(tk.Frame, tk.XView, tk.YView, InteriorAndExterior):
             self._common_kw.pop(k)
             self._interior_kw[k] = k
 
-        self.config = self.configure
         self.config(**kw)
 
     def on_scroll(self, event):
