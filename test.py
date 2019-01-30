@@ -14,4 +14,14 @@ for i in range(0, 30):
     label.bind('<MouseWheel>', xyframe.on_scroll)
     label.pack()
 
+
+def change_widget():
+    xyframe.config(bg="blue", bd=2)
+    xyframe.destroy()
+    print(xyframe.winfo_exists())
+
+
+btn = tk.Button(root, text='kill', command=change_widget)
+btn.pack(padx=10, pady=10)
+
 root.mainloop()

@@ -77,11 +77,6 @@ class XYFrame(tk.Frame, tk.XView, tk.YView, InteriorAndExterior):
         self.config = self.configure
         self.config(**kw)
 
-    def configure(self, **kw):
-        frame_kw, canvas_kw = self._dispatch_each_options(**kw)
-        self._exterior.config(**canvas_kw)
-        tk.Frame.config(self, **frame_kw)
-
     def on_scroll(self, event):
         """On scroll event."""
         u, l = self._exterior.yview()
@@ -118,3 +113,12 @@ class XYFrame(tk.Frame, tk.XView, tk.YView, InteriorAndExterior):
         if frame_reqh != exterior_h or frame_reqw != exterior_w:
             self._exterior.update_idletasks()
             self._exterior.config(scrollregion=self._exterior.bbox(self.__id))
+
+    def configure(self, **kw):
+        return InteriorAndExterior.configure(self, **kw)
+
+    def destroy(self):
+        return InteriorAndExterior.destroy(self)
+
+    def keys(self):
+        return InteriorAndExterior.keys(self)

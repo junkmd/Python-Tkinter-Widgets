@@ -12,14 +12,26 @@ TK_GEOMETRY_METHODS = tuple(set([
 ]))
 
 
+class CompositeWidgetError(Exception):
+    pass
+
+
 class InteriorAndExterior:
     """Internal class."""
     def __init__(self, exterior):
         self._exterior = exterior
+
+        if self in self._exterior.winfo_children():
+            pass
+        else:
+            raise CompositeWidgetError(
+                "Interior must be childrens of Exterior.")
+
         for m in TK_GEOMETRY_METHODS:
             setattr(self, m, getattr(exterior, m))
         self.winfo_parent = exterior.winfo_parent
-        inter_keys = self.keys()
+        self._base = self.__class__.mro()[1]
+        inter_keys = self._base.keys(self)
         exter_keys = exterior.keys()
         common_keys = list(set(inter_keys) & set(exter_keys))
         inter_only = list(set(inter_keys) - set(exter_keys))
@@ -32,6 +44,7 @@ class InteriorAndExterior:
                 kw[k] = k
         self._common_kw = c_kw
         self._interior_kw, self._exterior_kw = i_kw, e_kw
+        self.config = self.configure
 
     def _dispatch_each_options(self, **kw):
         """Internal function.
@@ -48,3 +61,33 @@ class InteriorAndExterior:
             else:
                 raise tk.TclError('unknown option \"%s\"' % ('-' + k, ))
         return (inter_opts, exter_opts)
+
+    def destroy(self):
+        """Destroy this and all descendants widgets."""
+        # Destroy self._exterior and its children widgets including interior.
+        # For avoiding RecursionError,
+        # removing self(interior) from self._exterior.children and
+        # destroy the interior and its children widgets
+        # before self._exterior.destroy() method will destroy the interior.
+
+        del_dict = {}  # deleting from self._exterior.children dictionary
+        for k, v in self._exterior.children.items():
+            if v is self:
+                del_dict[k] = v
+        for k, v in del_dict.items():
+            del self._exterior.children[k]
+            v.destroy()
+        self._exterior.destroy()
+
+    def keys(self):
+        inter = self._interior_kw.keys()
+        exter = self._exterior_kw.keys()
+        common = self._common_kw.keys()
+        keyset = list(set(list(inter) + list(exter) + list(common)))
+        keyset.sort()
+        return keyset
+
+    def configure(self, **kw):
+        inter_kw, exter_kw = self._dispatch_each_options(**kw)
+        self._exterior.config(**exter_kw)
+        self._base.config(self, **inter_kw)
