@@ -49,8 +49,10 @@ class InteriorAndExterior:
         self._interior_kw, self._exterior_kw = i_kw, e_kw
         self.winfo_parent = exterior.winfo_parent
         self.config = self.configure = self.__configure
+        self._base.__setitem__ = self.__setitem
         self.keys = self.__keys
         self.cget = self.__cget
+        self._base.__getitem__ = self.__cget
         self.destroy = self.__destroy
 
     def __dispatch_each_options(self, **kw):
@@ -97,15 +99,24 @@ class InteriorAndExterior:
 
     def __configure(self, **kw):
         """Configure resources of a widget.
-
         The values for resources are specified as keyword
         arguments. To get an overview about
-        the allowed keyword arguments call the method keys.
-        """
+        the allowed keyword arguments call the method keys."""
         inter_kw, exter_kw = self.__dispatch_each_options(**kw)
         self._exterior.config(**exter_kw)
         self._base.config(self, **inter_kw)
 
-    def __cget(self, keys):
+    def __setitem(self, key, value):
+        self.__configure(**{key: value})
+
+    def __cget(self, key):
         """Return the resource value for a KEY given as string."""
-        pass  # now implementing
+        if key in self._common_kw.keys():
+            return self._base.cget(self, self._common_kw[key])
+        else:
+            if key in self._interior_kw.keys():
+                return self._base.cget(self, self._interior_kw[key])
+            elif key in self._exterior_kw.keys():
+                return self._exterior.cget(self._exterior_kw[key])
+            else:
+                raise CompositeWidgetError('unknown option \"-%s\"' % key)
