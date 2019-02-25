@@ -1,7 +1,5 @@
 """
-references:
-
-https://www.tcl.tk/man/tcl8.4/TkCmd/entry.htm
+Entries with validator.
 """
 import tkinter as tk
 from numbers import Number
