@@ -1,6 +1,5 @@
-"""
-Entries with validator.
-"""
+"""Entries with validator."""
+
 import tkinter as tk
 from numbers import Number
 
@@ -13,61 +12,51 @@ class Validation(object):
 
     @property
     def type_of_action(self):
-        """
-        Type of action.
-        1 for insert,
-        0 for delete,
-        -1 for focus, forced or changing textvariable.
-        """
+        """Type of action.
+        0: deletion,
+        1: insertion,
+        -1: focus in, focus out, or a change to the textvariable."""
         return int(self.__kw['d'])
 
     @property
     def index(self):
-        """
-        Index of the beginning of the insertion or deletion.
-        -1 for focus, forced or changing textvariable."""
+        """Index of the beginning of the insertion or deletion.
+        -1: focus in, focus out, or a change to the textvariable."""
         return int(self.__kw['i'])
 
     @property
     def text_if_allowed(self):
-        """
-        The text in the entry will have if the change is allowed.
+        """The text in the entry will have if the change is allowed.
         """
         return self.__kw['P']
 
     @property
     def text_before_change(self):
-        """
-        The text in the entry before the change.
+        """The text in the entry before the change.
         """
         return self.__kw['s']
 
     @property
     def text_what_changed(self):
-        """
-        The text in the entry being inserted or deleted.
+        """The text in the entry being inserted or deleted.
         """
         return self.__kw['S']
 
     @property
     def type_of_validation(self):
-        """
-        The value of the entry's validate option.
+        """The value of the entry's validate option.
         """
         return self.__kw['v']
 
     @property
     def reason_for_callback(self):
-        """
-        The reason for this callback.
-        Returns 'focusin', 'focusout', 'key', or 'forced'.
-        """
+        """The reason for this callback.
+        Returns 'focusin', 'focusout', 'key', or 'forced'."""
         return self.__kw['V']
 
     @property
     def widget(self):
-        """
-        The entry widget.
+        """The entry widget.
         """
         return self.__widget
 
@@ -87,8 +76,6 @@ class Validation(object):
 
 class BaseEntryWithValidator(tk.Entry):
     """Internal class for tkinter Entry with valiator."""
-    # reference of tcl/tk built-in commands is below;
-    # https://www.tcl.tk/man/tcl8.4/TkCmd/entry.htm
     def __init__(self, master, **kw):
         """Construct an entry widget with validator."""
         tk.Entry.__init__(self, master)
@@ -96,30 +83,26 @@ class BaseEntryWithValidator(tk.Entry):
             self.register(self.__vcmd_callback),
             '%d', '%i', '%P', '%s', '%S', '%v', '%V'
         )
-        # reference of validatecommand arguments is below;
-        # http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/entry-validation.html
         #
-        # '%d'	Action code: 0 for an attempted deletion, 1 for
-        #       an attempted insertion, or -1 if the callback was called for
-        #       focus in, focus out, or a change to the textvariable.
+        # '%d'	Type of action.:
+        #       0: deletion,
+        #       1: insertion,
+        #       -1: focus in, focus out, or a change to the textvariable.
         #
-        # '%i'	When the user attempts to insert or delete text,
-        #       this argument will be the index of the beginning of
-        #       the insertion or deletion. If the callback was due to
-        #       focus in, focus out, or a change to the textvariable,
-        #       the argument will be -1.
+        # '%i'	Index of the beginning of the insertion or deletion.
+        #       -1: focus in, focus out, or a change to the textvariable.
         #
-        # '%P'	The value that the text will have if the change is allowed.
+        # '%P'	The text in the entry will have if the change is allowed.
         #
         # '%s'	The text in the entry before the change.
         #
-        # '%S'	If the call was due to an insertion or deletion, this argument
-        #       will be the text being inserted or deleted.
+        # '%S'	The text in the entry being inserted or deleted.
         #
         # '%v'	The current value of the widget's validate option.
         #
-        # '%V'	The reason for this callback: one of 'focusin', 'focusout',
-        #       'key', or 'forced' if the textvariable was changed.
+        # '%V'	The reason for this callback.
+        #       'focusin', 'focusout', 'key', or 'forced'.
+        #       'forced' means the textvariable was changed.
         #
         # '%W'	The name of the widget.
         #
@@ -133,8 +116,7 @@ class BaseEntryWithValidator(tk.Entry):
         return self.validate(validation)
 
     def validate(self, validation):
-        """
-        Validating the changing text in the entry.
+        """Validating the changing text in the entry.
         """
         return True
 
