@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from numbers import Number
+from unicodedata import east_asian_width
 
 
 class Validation(object):
@@ -121,8 +122,32 @@ class BaseEntryWithValidator(tk.Entry):
         return True
 
 
-class Entry_LimitedLen(BaseEntryWithValidator):
+def japanese_width_count(chr):
+    """
+    Returns int value.
+    1 for chr is halfwidth(hankaku).
+    2 for chr is fullwidth(zenkaku)
+    """
+    if east_asian_width(chr) in 'FWA':
+        return 2
+    else:
+        return 1
+
+
+def sum_of_japanese_width_count(chrs):
+    """Returns sum of Japanese width count of chrs.
+    """
+    res = 0
+    for c in chrs:
+        res += japanese_width_count(c)
+    return res
+
+
+class Entry_LimitedJapaneseDataLength(BaseEntryWithValidator):
+    """tkinter Entry widget for Japanese."""
     def __init__(self, master, length=None, **kw):
+        # not implemented:
+        #   length option.
         self.__len = length
         BaseEntryWithValidator.__init__(self, master, **kw)
 
@@ -130,15 +155,21 @@ class Entry_LimitedLen(BaseEntryWithValidator):
         if self.__len is None:
             return True
         after = validation.text_if_allowed
-        if len(after) > self.__len:
+        # not implemented:
+        #   if the action was paste.
+        #   invalid event handling.
+        if sum_of_japanese_width_count(after) > self.__len:
             return False
         else:
             return True
 
 
+Entry_LtdJpnDataLen = Entry_LimitedJapaneseDataLength
+
+
 if __name__ == "__main__":
     root = tk.Tk()
-    ent = Entry_LimitedLen(root, length=10)
+    ent = Entry_LtdJpnDataLen(root, length=10)
     ent.pack()
 
     root.mainloop()
